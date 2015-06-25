@@ -1,0 +1,453 @@
+\input texinfo
+@c %**start of header
+@setfilename desknet.info
+@settitle  DESKNET Version 0.1
+@c %**end of header
+
+@copying
+Desknet Manual Version 0.1 Copyright @copyright{} 2014 John Slayton
+
+This manual is for desknet-0.1, which allows up to 26 students to
+simultaneously do academic work on a single computer.
+
+Permission is granted to copy, distribute and/or modify this document 
+under the terms of the GNU Free Documentation License, Version 1.3 or 
+any later version published by the Free Software Foundation; with no 
+Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.  A
+copy of the license is included in the section entitled "GNU Free
+Documentation License".
+
+Author's address as of June 6, 2014 is 260 Sundance Ct, Azusa, CA 91702. 
+Report bugs to juanslayton@@dslextreme.com
+@end copying
+
+@titlepage
+@center @titlefont{DESKNET MANUAL}
+@sp 4
+@author John Slayton
+@insertcopying
+@end titlepage
+
+@setchapternewpage on
+@c @chapter
+
+@contents
+
+@ifnottex
+@node Top
+@top DESKNET
+@insertcopying
+@end ifnottex
+
+
+@menu
+* Getting Started::                     Set up your network
+* Student Activities::                  What the students can do         
+* Teacher Activities::                  You have to be over 21
+* System Notes::                        Security too
+* GNU Free Documentation License::      Copyleft
+@end menu
+
+@node Getting Started
+
+@chapter GETTING STARTED
+
+@heading What Else Do You Need?
+
+When one program relies on another program or file resource it is said
+to be dependent on that resource.  The Desknet program will need you to
+have installed Freetype, SDL2, SDL2-devel, SDL_ttf and SDL_ttf-devel.
+I currently use ttf-bitstream-vera-1.10, installed in /usr/local/etc/fonts/
+Other free fonts available but be sure to put them in /usr/local/etc/fonts/
+because that is where Desknet will look for them.
+ 
+@heading Get Your Keyboards Ready 
+
+I am recommending the Logitech K360 wireless keyboard for three reasons:
+
+   1) This keyboard has no mouse and only generates 1 'event' per board,
+which simplifies configuring your network.
+    
+   2) This keyboard can use the Logitech unified receiver.  Each of
+      these tiny receivers can distinguish 6 different keyboards.  By
+      using only 5 of them, I could connect up to 30 boards.
+
+   3) Logitech claims a 3 year life from two batteries.  We shall see,
+      but so far it looks good.  Since each board has an on/off power
+      switch, this may turn out to be a credible claim.
+
+@heading Connect All Your System Components
+
+One 7 port hub with 5 Logitech receivers should do the trick.  If you
+plug in receivers while your computer is running, the USB system gives
+each keyboard an event number, but what number it gets is pretty hard
+to predict.  Even starting from scratch with all components already
+plugged in will give different number assignments from one boot up to
+another.  Strategy here will be to start the system with everything
+connected, run the 'deskplan' configuration program, and keep it all
+running non-stop from September to June.  We just avoid plugging and
+unplugging things during the year.
+
+@heading Run the 'createkey' Program
+
+The 'createkey' script enables you to make an answer file for your
+current textbook.  You probably will want to defer doing this until
+you know your system is working properly.  The 'desknet' program will
+run without an answer file, although the 'Check Your Math' routine
+will not be available until the file is made.
+
+This script assumes that all the relevant pages in the text are numbered
+with sequential positive integers.  If this is not the case, as when, for
+example, there might be a section with Roman numerals, letters, or decimal
+numbers using decimals indicating content subsections, you will need either
+to leave out those pages or renumber all the pages yourself.
+
+The reason for this is that this script creates a completely flat file in
+which pages are marked by the character '~', problems by the character '|',
+and the 'at' symbol is used to indicate the end of the file.  When the desknet program
+looks up a page or problem in this file, it simply counts the '~'s from
+the beginning of the file until is finds the targeted page, then counts
+the '|'s until it reaches the targeted problem.
+
+It should go without saying that these three symbols cannot be used as
+part of an answer.  So I won't say it...
+
+When you run the script (with the command 'createkey' it will look in the
+folder /usr/local/etc/answerkeys for any answer files that may already be
+there.  You can choose which of those files to load.  But if this is your
+first install, the only file there will be 'template,' so go ahead and use
+that.
+
+Your next step is to choose 'Extend File' from the main menu.  It will start
+you with page 1, problem 1.  Your choice will be to move to page 2 (if there
+are no problems on page 1), to move to problem 2 (if you don't want to have
+an answer to problem 1) or to enter the answer for problem 1.  You can leave
+any problem answer blank, but you can not skip a problem. 
+
+(There will be many problems for which you will want to avoid putting an answer.
+In general they will be yes/no or multiple choice questions, for which the kids
+could quickly determine the correct answer without even reading the problem.)
+
+You probably will not want to make this file all in one sitting.  When you get
+tired, follow the directions to return to the main menu.  From that menu, use
+'e - Save File'.  You will be asked for a file name.  You will probably want
+to use something that indicates the name of the text, or the grade level of
+your class, particularly if other classes using the network are using different
+grade level texts.
+
+When you get back to finish making the file, just run 'createkey' again.  Your
+draft will be listed among the existing files, so just load it in and continue
+with 'extend file.'
+
+When your file is finished, run both the 'Save File' and 'Install File' routines
+(in that order).  'Install File' will copy your file in your selected class
+folder, under the name 'key3'.  Exit the 'createkey' script and you're ready to go.
+  
+@heading Run the 'deskplan' Program
+
+Each keyboard was given its own 'event number' by the USB system when
+you turned on the computer.  This number lets the program identify
+an input character as being from a particular keyboard.  Once it knows
+which keyboard the character came from, it can figure out which display
+line it should be printed on.  The 'deskplan' program asks you for an
+event number and the number of a line on the screen.  There are two
+columns of 'lines' on the screen, each 20 characters long.  They are
+numbered from top to bottom.  On the left are lines 1 to 20; on the
+right are lines 21 to 40.  When you have linked an event number and
+a line number, only the keyboard that has that event number will be
+able to print to that line.
+
+You have to know what the event numbers are.  You can find these by typing:
+"nano /proc/bus/input/devices".  (No, don't type the quotation marks. (<: )
+
+A typical entry in this file looks something like this:
+
+@indentedblock
+I: Bus=0003 Vendor=046d Product=c52b Version=0111
+N: Name="Logitech Unifying Device. Wireless PID:4004"
+P: Phys=usb-0000:00:03.1-3.2:1
+S: Sysfs=/devices/pci0000:00/0000:00:03.1/usb3/3-3/3-3.2/3-3.2:1.2/0003:
+U: Uniq=
+H: Handlers=sysrq kbd event11
+B: PROP=0
+B: EV=12001f
+B: KEY=837fff072ff32d bf54444600000000 1 30f948b17c007 ffff73fad941dfff 
+B: REL=40
+B: ABS=100000000
+B: MSC=10
+B: LED=1f
+@end indentedblock
+
+The second line shows that you are looking at a Logitech device.  If 
+you don't have other Logitech devices in your system, this will be
+one of your keyboards.  The 6th line identifies event 11 as a keyboard.
+Make a list of all the keyboard events in this file before you run
+'deskplan.'  Or not.  But 'deskplan' itself will instruct you to stop
+and do this if you haven't already done so.
+
+Once you have assigned an event number to all the boards in your system,
+type "123" to leave the configuration routine. 
+ 
+@heading Run the 'desknet' Program
+
+Start the program with  @kbd{desknet}
+
+@node Student Activities
+@chapter STUDENT ACTIVITES
+
+These are printed in red or green text on the main menu.  The program 
+presently gives the following support to teacher instruction:
+
+@heading Math Facts
+Practice for addition, subtraction, multiplication and division.  This
+is presented as a real-time competition.  Scoring is handicapped so
+that the top students do not dominate the race.  The range of problems
+is controlled by the teacher (see below) so that students are not asked
+to solve problems they have not studied.
+
+@heading Keyboarding
+Touch typing, with about 160 practice lines.  Minimum standards for
+both speed and accuracy must be met to advance through this material.
+
+@heading Guided Practice
+Students check their own work from the math text.  The program asks
+three questions:  'What's the page?', 'What's the problem?', and
+'What's the answer?'.  It never shows the answer, and the student 
+does not work the problem on the computer.  It does tell the student
+whether she has the right answer, thus providing immediate feedback.
+It is up to the teacher to set the rules as to what to do if the
+student's answer is wrong.
+
+@heading Word Processing
+Each student has a single 20 character line in which to work.  This
+line will scroll right and left, so that it will accomodate a typical
+composition by elementary students.  Generally I have used it by
+printing out drafts of the students' initial efforts, marking up these
+hard copies, and then having the students go back and use the edit
+functions to clean things up.  
+
+@node Teacher Activities
+@chapter TEACHER ACTIVITIES
+
+To keep the kids from messing up the system, some of these routines ask 
+for a 4 digit password.  The dummy default password is 1040, which will 
+be familiar to Americans who pay income taxes.  
+
+@heading Class Selection
+
+This routine is accessed from the main menu, although it does not show 
+on the menu screen.  The program supports up to 9 different classes.  
+The name of a class or group being served can be shown at the top left 
+of the menu.  To do this, push 'x' on the main menu.  (This function is 
+hidden and does not appear on the menu itself.)  Follow the screen 
+prompts to enter an identifier, such as "Class 1" or "Mrs. Smith."
+
+To change from one class to another, go to the main menu 
+and push a number from 1 to 9.
+
+@heading Class Roster
+
+This program assumes assigned seating, and thus assigned keyboards.  The 
+teacher will enter the names of individual students into the computer 
+roster, so the computer will know who is using a particular keyboard.  
+The roster can be viewed by pushing Q on the main menu.  It shows the 
+names of the students, their current typing practice lines, and their
+current math handicaps (explained below).
+
+To enter student names into the roster, use menu item R.  It will ask 
+you for the keyboard (line) number, and the name of the student who 
+uses that keyboard. 
+
+@heading Math Facts Routines
+
+Math Facts Handicaps
+
+The kids are not ignorant of the fact that some are faster than others 
+when it comes to math.  In a competitive exercise such as this, the 
+danger is that one or two kids will so outclass the others that they 
+will always win, with the result that the rest lose interest.  To avoid 
+this, the facts exercises are handicapped--not everybody gets the same 
+number of points for a right answer.
+
+Here is one way to use it.  At the beginning of the school year, 
+everyone starts by getting 9 points for a right answer.  Make a note of 
+who wins the first day and set his handicap to get 8 points the next day.
+If he wins again, make it 7 points, and so on until someone else wins.
+In a few days, the program will have internalized a class profile;
+this can be seen by viewing the roster as described above.  (Menu item
+is 'Q.')
+
+To change the handicaps, push H on the main menu, then enter the 
+student's keyboard (line) number, followed by the number of points you 
+want him to get.  The range is 1 to 9, but don't count on the program to 
+correct you if you make a mistake in the range.  You can set different
+handicaps for each of the operations (addition, subtraction, multiplication,
+division).
+
+Math Facts Win Score
+
+This is I on the menu, and it is pretty much self explanatory.  Range is 
+1 to 99 points.  The program is not written to accomodate 3 digit 
+scores.
+
+Math Facts Problem Generation
+
+There is no table of problems; these are generated on the fly by the 
+program.  A pseudorandom number is generated for each of the two problem 
+terms, and the answer is then calculated for comparison with student 
+input.  The random number is not used directly.  Instead, it is used 
+as a pointer to get one of a set of 10 numbers.  The teacher has created 
+this set, so she is able to determine the range of possible problems.
+She did this by invoking lines J and K of the menu.  Although the 
+Menu says multiplication, the fact is that this set of 10 numbers is 
+used for all the computation skills. 
+
+Let's say that the class has studied the multiplication facts up to 3 x 
+9.  The teacher can push J on the menu, followed by 1 2 3 1 2 3 1 2 3 1.
+The first term of each problem will now be 1, 2, or 3. Then, by pushing 
+K, followed by 1 2 3 4 5 6 7 8 9 1, the second term can be any digit 
+between 1 and 9.  Now all the problems will fall within the range that 
+has been previously presented to the class.
+
+When using menu items J or K, enter any ten digits _except zero_.
+
+HELP WITH CLASSWORK
+
+Students using this routine are getting immediate feedback as they do 
+textbook exercises.  But the computer merely tells them if their 
+answer is right or wrong.  It is up to the teacher to say what to do with
+that information.  My general practice is something like this: 
+@quotation
+ First, do not do the next problem until you have the current answer 
+right.  Second, if your answer is wrong,look at your work and try to
+find your mistake. _Do not guess_.  If you can't figure out what you
+did wrong, raise your hand and ask for help.  That's what teachers are
+for, after all.
+@end quotation
+
+The effect of this program varies from student to student.  For many 
+students, the immediate feedback by itself seems to raise interest and 
+effort.  Importantly, if the instructions are followed, it prevents 
+students from practicing an erroneous algorithm.  For example, it is 
+common for students at my grade level, faced with a subtraction problem 
+that involves borrowing, to try to take the top number from the bottom 
+one.  They may do several problems in a row this way, and not get 
+corrected until the next day after the teacher has reviewed their work.  
+This routine prevents that:  They get corrected on the first error.
+
+KEYBOARDING
+
+My experience suggests that it's important to paint out the alphabetical 
+keys on the boards if you want the kids to learn to type by touch and 
+not hunt-and-peck.
+
+This program provides good practice, but it is no substitute for 
+instruction.  It is necessary to monitor constantly and correct the 
+students while they practice.
+
+Make sure that all the students start on the first line of the practice 
+set.  You can see what line each student is on by pushing menu item Q.  
+To change a single line (as when a student has left and another is 
+taking her place), use Menu item L.  It will ask you for the keyboard 
+number and the line to start with.
+
+There are times when you may want to set back the entire class (such as 
+after a two week vacation).  To do this, use Menu item M.  It sets every 
+student back one line, each time you push the M.  This is also a good 
+way to quickly reset all the boards to line 1 at the beginning of the 
+year.
+
+WORD PROCESSING
+
+Menu item N will clear the word processor _for the entire class_.  There 
+is no way to clear an individual student other than from his own 
+keyboard.
+
+The student types away, and when he reaches the end of the line, the line
+itself scrolls to the left.  The left and right cursor keys will function
+and can be used to scroll either left or right.  The keypad is not decoded,
+nor is the backspace.  To erase a character, use the left or right cursor
+key to land on it and then use delete.  To insert a character, place the
+cursor on the character that will follow, and push insert.  This will make
+a space that can then be filled with the character you have in mind. 
+
+The processor print routine (Menu item O) is configured for my Brother
+MFC-490CW.  CUPS was configured for this printer on my system,  To use
+another printer, it is necessary at present to change line 5009 on the
+'desknet.c' source code and then recompile the program.  This works, but
+it obviously a very unsatisfactory hack, and one big 'to do' is to find
+a better way.
+
+Two copies of each student's work are automatically saved when you return
+to the main menu from menu item G.  One copy will be found in directory
+/usr/local/com/classX/files, as 'filea', where 'X' is the class number and
+'a' is the student's keyboard number. This copy is used to print out rough
+drafts for work in progress.
+
+The other copy will be found in directory /root/Documents.  The name of
+this file is the student's name as you have entered it in the program roster.
+The purpose of this copy is to enable the use of a full-featured processor,
+such as Open Office, to produce a polished version of the student work.  To
+do this you will have to close Desknet, open the processor, recover the
+student's file from /classwork, and edit to your heart's content. This is
+another deficient hack, but it works for now.
+
+WARNING:  If the same student name is used by more than one class, this
+procedure will not distinguish the two.  The last of the two to submit
+written work will have his file in /root/Documents and the previous file
+will have been overwritten.  So be careful that there are no duplicated
+names.
+
+@node System Notes
+@chapter SYSTEM NOTES
+@heading Dependencies
+
+This program depends on the CUPS, SDL2, and SDL2_ttf libraries having
+been installed.
+
+@heading What You Have Installed
+
+If you did the standard installation with the source makefile, your 
+files are located in the following places (where N is a number from
+1 to 9):  
+
+/usr/local/bin/dnet                   the executable
+/usr/local/bin/desknet                bash script to configure network
+/usr/local/bin/createkey              bash script to make textbook answer file
+/usr/local/etc/events                 usb network configuration 
+/usr/local/etc/answerkeys             textbook answer files
+/usr/local/com/classN/names           student and teacher names
+/usr/local/com/classN/files           student writing files
+/usr/local/com/classN/names           student and teacher names
+/usr/local/com/classN/settings/       program parameters & student performance
+/root/Downloads                       student writing files
+
+@heading Security
+Security may or may not be a problem for you.  Minimally, you will want
+to keep students from messing with the class roster, the content of the
+exercises, or other students' records.  That's why you have your own
+password, which you use to access some sensitive areas of the program.
+The default supplied with the program is '1040,' which can be easily
+remembered by its association with the federal income tax.  Of course,
+as soon as some kid discovers what it is, you will have to change it.
+
+WARNING:  As of July 2014, this routine does not include setting a class
+password.  Look to the future, but for now the password for a given class
+can be changed by hand.  Use your editor (I use Nano) to look at the file
+/usr/local/com/classN/settings/pass (where N is the number of the class).
+Change it to whatever 4 character number you want.  (This will not change
+the passwords of the other 8 classes.)  Even when the following routine
+is implemented, this method will be useful when you can't get into routine
+X (because you have forgotten the current password!).
+
+///NOT YET IMPLEMENTED
+There is a hidden routine to accomplish this.  From the main menu, push 
+X.  You will be asked for your name and a password.  The name will be 
+displayed at the top of the menu, and the password will allow entry into 
+the restricted routines.
+
+@node GNU Free Documentation License
+@chapter GNU FREE DOCUMENTATION LICENSE
+@include fdl.texi
+
+@bye

@@ -1,0 +1,569 @@
+
+ #                         MAKE KEY  version 1  2014
+
+ #  This script creates an answer file for math problems from a textbook or other printed
+ #source.  The file is saved with the title 'key3' in folders of designated classes for the
+ #program 'desknet'.  A copy, named by the teacher, is also saved in /usr/local/com/answerkeys.
+ 
+ #!/bin/sh
+ #stty intr ^- quit ^-
+ 
+ clear
+ 
+ if [ "${1}" = "--version" ]
+ then
+  flag='version'
+ fi
+ 
+ if [ "${1}" = "-v" ]
+ then
+  flag='version'
+ fi
+  
+ if [ "${flag}" = "version" ]
+ then
+   printf  "
+    
+ Desknet 0.1
+ Copyright (C) 2014 John Slayton
+ 
+ License GPLv3+:  GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+ This is free software:  You are free to change and redistribute it.
+ There is NO WARRANTY, to the extent permitted by law.\n"
+ 
+ exit 0
+ 
+ # Prints usage if any argument other than --version, including --help
+ elif [ "${1}" ]
+ then
+   printf  "\n
+   Usage:  Makekey [options]
+   
+   Creates answer key for checking student work from printed materials.
+   
+   --help        This display
+   --version     Display Classnet version
+   
+   Send bug reports to juanslayton@dslextreme.comm"
+   
+ exit
+ fi
+  
+ #                            VARIABLES
+ a=0, b=0, e=0, f=0, g=0, i=0;
+ declare -i m
+ declare -i c
+ declare -i page
+ declare -i pagetarget
+ declare -i problem
+ declare -i problemtarget
+ declare query=" "
+ declare saywhat=" "
+  
+alpha ()
+{ 
+  query=" "
+  while [[ "$query" == " " ]]
+  do 
+    read -s -n1 query 
+  done
+  return 0
+}
+   
+extendfile()
+{
+  i=0; pager=0; problem=0;
+  
+  while [[ "${answer[i]}" != "@" ]] # COUNT PAGES TO THE END OF FILE.
+  do
+    if [[ ${answer[$i]} = "~" ]]; then
+      ((pager++))
+    fi
+    ((i++))
+  done  
+  echo -e "\nLast page is $pager."
+  
+  while [[ "${answer[$i]}" != "~" ]]  # BACK UP TO BEGINNING OF LAST PAGE.
+  do
+    ((i--))
+  done
+  
+  while [[ "${answer[$i]}" != "@" ]] # COUNT PROBLEMS TO THE END OF FILE.
+  do
+    ((i++))
+    if [[ ${answer[$i]} = "|" ]]; then
+      ((problem++))
+    fi
+  done
+  end=$i
+  
+  echo -e "\nLast problem is $problem."
+  echo -e "\nEnter 1 to add a new problem, 2 to add a new page, 3 to write answer to current problem."
+  echo -e "\nEnter s to save changes and return to menu."
+  
+  query=" "
+  while [[ "$query" != "1" ]] && [[ "$query" != "2" ]] && [[ "$query" != "3" ]] && [[ "$query" != "s" ]] 
+  do 
+    read -s -n1 query 
+  done
+  
+  if [[ "$query" = "1" ]]; then
+    answer[$i]="|"
+    ((i++))
+    ((end++))
+    answer[$i]="@"
+    continue=1
+    return
+  fi
+  
+  if [[ "$query" = "2" ]]; then
+    answer[$i]="~"
+    ((i++))
+    ((end++))
+    answer[$i]="@"
+    continue=1
+    return
+  fi
+  
+  if [[ "$query" = "3" ]]; then
+    clear
+    echo "What's your answer? (End it with \\)"
+    while [[ 1 = 1 ]]
+    do
+      saywhat=""
+      while [[ "$saywhat" == "" ]]
+      do 
+        saywhat=""
+       read -r -n1 saywhat 
+      done
+     
+      if [[ "$saywhat" = \\ ]]; then       
+        break
+      fi
+             
+      insert
+      ((i++))
+      
+    done
+      
+    savefile
+    continue=1
+    return
+  fi
+     
+  if [[ "$query" = "s" ]]; then
+    savefile
+    continue=0
+    return
+  fi
+}
+
+findproblem ()
+{
+  clear
+  echo -e -n "\v\vWhat page is it on?\n\n"
+  getpage
+  echo -e -n "\r\v\vWhat problem do you want?\n\n"
+  getproblem
+  i=0
+  pager=0
+  while (($pager < $pagetarget)) 
+  do
+    if [[ ${answer[$i]} = "~" ]]; then
+      ((pager++))
+    fi
+    ((i++))
+  done  
+  
+  answerindex=$i
+  
+  if [[ "${answer[$answerindex]}" != "|" ]]; then
+    echo -e -n "\r\v\vNO PROBLEM $problemtarget ON THIS PAGE YET\n\n"
+    alpha; clear; return;
+  fi
+  
+  i=$problemtarget
+  while [[ $i > 0 ]]
+  do
+    if [[ "${answer[$answerindex]}" = "|" ]]; then
+      ((i--))
+    elif [[ "${answer[$answerindex]}" = "~" ]]; then
+      echo -e -n "\r\v\vNO PROBLEM $problemtarget ON THIS PAGE YET\n\n"
+      alpha; clear; return;
+    fi
+    (( answerindex++ ))
+  done
+  
+  if [[ "${answer[$answerindex]}" = "|" ]]; then
+    echo -e -n "\r\v\vNO ANSWER TO PROBLEM $problemtarget ON THIS PAGE YET\n\n"
+    alpha; clear; return;
+  fi
+  
+  ############################## PRINT THE ANSWER
+  echo -e -n "\n\nThe answer is ${answer[$answerindex]}"
+  ((answerindex++))
+  while [[ "${answer[$answerindex]}" != "|" ]] && [[ "${answer[$answerindex]}" != "~" ]]  && [[ "${answer[$answerindex]}" != "@" ]]
+  do
+    echo -e -n "${answer[$answerindex]}"
+    ((answerindex++))
+  done
+  
+  echo -e -n "\n\n answerindex is $answerindex"
+  alpha; clear; return;
+}
+
+getfile ()
+{ 
+  read -a key</usr/local/etc/answerkeys/$filename
+  if [ $? -ne 0 ]; then
+    clear
+    echo -e "\n\n  No such file.  Push 'enter' to start over."
+    alpha
+    exit    
+  fi
+  
+  i=0
+  while [ 1 = 1 ]
+  do
+    answer[$i]=${key:$i:1}
+    
+    if [ "${answer[$i]}" = "" ]; then
+      break
+    fi
+    
+    if [ "${answer[$i]}" = '`' ]; then
+      answer[$i]=" "
+    fi
+    
+    ((i++))
+  done
+  
+  return 0;
+}
+
+getpage ()
+{ 
+  #######################################   ENTER FIRST DIGIT.
+  r=""
+  b=" "
+  while [[ "${b}" < "0" ]] || [[ "${b}" > "9" ]] && [[ "${b}" != "$r" ]]
+  do
+    read -s -n1  b
+  done
+  
+  if [[ $b = "" ]]; then
+    return
+  fi
+  
+  pagetarget=$b
+  echo -n "$pagetarget"
+  
+  ########################################  ENTER SECOND DIGIT.
+  r=""
+  b=" "
+  while [[ "${b}" < "0" ]] || [[ "${b}" > "9" ]] && [[ "${b}" != "$r" ]]
+  do
+    read -s -n1  b
+  done
+  
+  if [[ $b = "" ]]; then
+    return
+  fi
+  
+  pagetarget=10*$pagetarget+$b
+  echo -e -n "\r$pagetarget"
+  
+  #######################################   ENTER THIRD DIGIT.
+  r=""
+  b=" "
+  while [[ "${b}" < "0" ]] || [[ "${b}" > "9" ]] && [[ "${b}" != "$r" ]]
+  do
+    read -s -n1  b
+  done
+  
+  if [[ $b = "" ]]; then
+    return
+  fi
+  
+  pagetarget=10*$pagetarget+$b
+  echo -e -n "\r$pagetarget\n\n"
+  
+  return 
+}
+  
+getproblem ()
+{ 
+  #######################################   FIRST DIGIT
+  r=""
+  b=" "
+  while [[ "${b}" < "0" ]] || [[ "${b}" > "9" ]] && [[ "${b}" != "$r" ]]
+  do
+    read -s -n1  b
+  done
+  
+  if [[ $b = "" ]]; then
+    return
+  fi
+  
+  problemtarget=$b
+  echo -n "$problemtarget"
+  
+  ########################################  SECOND DIGIT
+  r=""
+  b=" "
+  while [[ "${b}" < "0" ]] || [[ "${b}" > "9" ]] && [[ "${b}" != "$r" ]]
+  do
+    read -s -n1  b
+  done
+  
+  if [[ $b = "" ]]; then
+    return
+  fi
+   
+  problemtarget=10*$problemtarget+$b  
+  echo -e  "\r$problemtarget\n"
+  
+  return 
+}
+
+installfile ()
+{
+  clear
+  echo -e -e "\n\n               INSTALL THIS FILE IN ONE OF THE CLASSES"  
+  echo -e "\n\n       The Desknet program provides files for up to 9 classrooms.  Each room"
+  echo -e "    may be using a different text, in which case each room will need a different"
+  echo -e "    answer key.  All the answer key files have the same name ('key3'), but they"
+  echo -e "    are stored in different folders.  Installing this file in one of the classes"
+  echo -e "    below will overwrite whatever 'key3' file is already there."
+    
+  printf "\n
+  a - First Class
+  b - Second Class
+  c - Third Class
+  d - Fourth Class
+  e - Fifth Class
+  f - Sixth Class
+  g - Seventh Class
+  h - Eighth Class
+  i - Ninth Class
+  j - Return to Menu"
+      
+  ###########################################  READ SELECTIONS AND JUMP TO MENU APPLICATIONS
+  alpha; clear   
+    
+  case $query in
+    a) cp keystone /usr/local/com/class1/key3;;
+    b) cp keystone /usr/local/com/class2/key3;;
+    c) cp keystone /usr/local/com/class3/key3;;
+    d) cp keystone /usr/local/com/class4/key3;;
+    e) cp keystone /usr/local/com/class5/key3;;
+    f) cp keystone /usr/local/com/class6/key3;;
+    g) cp keystone /usr/local/com/class7/key3;;
+    h) cp keystone /usr/local/com/class8/key3;;
+    i) cp keystone /usr/local/com/class9/key3;;
+    j) return;;
+  esac
+  
+  return
+}
+
+insert ()
+{
+  ((end++))
+  countdown=$end
+  while [[ $countdown != $i ]]
+  do
+    answer[$countdown]=${answer[$countdown-1]} 
+    ((countdown--))
+  done
+  answer[$i]=$saywhat
+  return 0;
+}
+
+namefile ()
+{  
+  clear
+  echo -e -e "\n\n               GIVE THIS FILE A NAME"
+  echo -e "\n\n       This file will be saved in /usr/local/etc/answerkeys, with whatever name you"
+  echo -e "  enter below.  Other classes may be using different books, so the folder may have"
+  echo -e "  several answerkey files.  If you use the name of a file that is already in the folder,"
+  echo -e "  this file will overwrite that file.  Installing this file (Menu item f) will save it" 
+  echo "  in the selected class (under /usr/local/com/) using the file name 'key3'."
+  echo -e "\n  Here are the files presently in the folder:"
+  
+  ls -l /usr/local/etc/answerkeys
+  
+  echo -e "\n  What should we name this file?"
+  read filename
+  cp keystone /usr/local/etc/answerkeys/$filename
+  echo -e "\n  File is saved."
+  alpha
+  
+  return 0
+}
+
+newfile ()
+{
+  answer[0]="~" # file starts with pg mkr
+  answer[1]="|"  # continues with prob mkr
+  answer[2]="@"
+  echo -e -n "${answer[0]}${answer[1]}${answer[2]}" > keystone
+  
+  return 0
+}
+
+review ()
+{
+  clear
+  
+  echo -e "\n(Use left and right arrows to scroll through the file.)\n"
+  echo -e "\v\v\v\v\v\v\v\vYOU ARE LOOKING AT\n"
+  echo -e "PAGE\t\tPROBLEM\t\tANSWER\n\n"
+  page=0
+  problem=0
+  c=0
+  p=""   
+  wipeout="                                                                                "                                                                        
+  out=""
+  afuera="p"
+  query=" " 
+   
+  while [[ $query != $out ]] 
+  do
+      read -sn1 a
+      if [[ $a = "$out" ]] || [[ $a = "$afuera" ]]; then
+        break
+      fi
+      
+      test "$a" == `echo -en "\e"` || continue
+      read -sn1 a
+      test "$a" == "[" || continue
+      read -sn1 a
+      
+      case "$a" in
+        A) echo -e -n "";;
+        B) echo -e -n "";; 
+	C)  if [[ ${answer[$c]} = "~" ]]; then
+             ((page++))
+             problem=0
+             echo -e -n  "\r${wipeout}"  # ERASE PREVIOUS PAGE NUMBER.
+             echo -e -n  "\r${page}"     # DISPLAY NEW PAGE NUMBER.
+             ((c++))
+           fi
+           
+           if [[ ${answer[$c]} = "|" ]]; then
+             ((problem++))
+             echo -e -n  "\r\t\t${wipeout}"  # ERASE PREVIOUS PROBLEM NUMBER.
+             echo -e -n  "\r\t\t${problem}"  # DISPLAY NEW PROBLEM NUMBER.
+             echo -e -n  "\r\t\t\t\t${wipeout}"  # ERASE PREVIOUS ANSWER.               
+             ((c++))
+           fi
+             
+           echo -e -n  "\r\t\t\t\t${p}"  # MOVE TO ANSWER LOCATION ON SCREEN.
+           
+           while [[ ${answer[$c]} != "|" ]] && [[ ${answer[$c]} != "~" ]]
+           do
+             echo -e  -n  "${answer[$c]}"
+           
+             if [[ "${answer[$c]}" = '@' ]]; then  #STOP AT END OF FILE.
+             clear
+             return
+             fi
+           
+             ((c++))
+           done;;       
+           
+        D) while [[ ${answer[$c]} != "|" ]] && [[ ${answer[$c]} != "~" ]]
+           do
+             ((c--))
+           done;;
+                      
+      esac
+    done
+  clear
+  return 0
+}
+  
+savefile ()
+{
+  c=0
+  b="@"
+
+rm keystone
+  4<>keystone #create & open file keystone
+  4>&-    #close file keystone
+  
+  while [[ "${answer[$c]}" != "$b" ]]
+  do
+    if [ "${answer[$c]}" = ' ' ]; then
+      answer[$c]='`'
+    fi
+    echo -n "${answer[$c]}" >> keystone
+    ((c++))
+  done
+  
+  echo -n "${answer[$c]}" >> keystone
+    ((c++))
+  m=1-1
+  echo -e $m_ >> keystone
+  return 0;
+}
+
+scratch ()
+{
+  return 0;
+}
+
+  ################################################## START HERE
+  clear
+  echo -e "\n\n\n\nHere are the current files:"
+  ls -l /usr/local/etc/answerkeys
+  echo -e "\n  Which one do you want?"
+  read filename
+  
+  echo -e "\v\v\v\v\v\v\vGIVE ME A MINUTE\n"
+  getfile 
+  while [ "1" == "1" ]
+    do
+      clear  
+      printf "                                       MAKE ANSWER KEY\n\n
+      a - Review Existing File\n
+      b - Find a Problem\n
+      c - Extend File\n
+      d - Change an Answer\n
+      e - Save File\n
+      f - Install File\n
+      g - New File\n
+      ! - Quit\n\n"
+      
+      ##########################################  READ SELECTIONS AND JUMP TO MENU APPLICATIONS
+      alpha   
+      
+      case $query in
+        a) review;;
+           
+        b) findproblem;;
+        
+        c) continue=1
+           while [[ $continue = 1 ]]
+           do
+             extendfile;
+           done;;
+          
+        d) findproblem;
+           scratch;; 
+           
+        e) savefile
+           namefile;;
+         
+        f) savefile
+           installfile;; 
+           
+        g) clear
+           echo -e "\n\n  To start a new file, exit this program.  Then rerun it and select "template" as"
+           echo "  the initial file.  This will establish the beginning of the file.  Use "Extend File" to continue."
+           alpha;;
+           
+        !) exit;;
+      esac
+    done

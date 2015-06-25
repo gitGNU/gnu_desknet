@@ -1,0 +1,58 @@
+#          * * * * * * * README FOR DESKNET * * * * * * *
+#                           desknet-0.1
+#                          Copyright  2014
+#                          by John Slayton
+#                        Distributable under
+#                   the GNU General Public License.
+#                  Contact Free Software Foundation
+#                     51 Franklin St, Fifth Floor
+#                     Boston, MA  02110-1301, USA
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Author's address as of 12/30/14 is 260 Sundance Ct, Azusa, CA 91702.  */
+
+
+The accompanying program ("Desknet") is designed to run a network of up 
+to 40 USB keyboards.  All accompanying files are released under the Gnu 
+General Public License.  See file COPYING for details.
+
+The tarball in which this file is found should be considered alpha.
+
+This program is dependent on:
+  SDL2
+  SDL2-devel
+  SDL2_ttf
+  SDL2_ttf-devel
+  FreeType
+
+  Compiling assumes presence of gnumake and gcc compiler.
+
+Since you are reading this, you are probably in the directory 
+"desknet." If not, get there.  Enter "./configure" , then "make" and 
+"make install".
+
+The current source file is "dnet.c". The binary is dnet.  Invoke it the 
+first time with the script "desknet".  Subsequently the program may be
+invoked directly with "dnet".  
+
+You will have to hand configure your keyboard network the first time
+you run the program.  For instructions in how to do this type 'info 
+desknet' after you install the program.
+
+The "Check Your Work" routine requires an answer file for your textbook.  These
+files are not included in this package and will need to be created by the
+users for the particular books they use.  The included script "createkey" may
+help create individual answer files.
