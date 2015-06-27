@@ -86,6 +86,9 @@ int ltr = 0;
  /* m is the number of a message.  See line #523, for example. */
 int m = 0;
 
+ /* How many pages in the math text book? */
+int max_page = 0;
+
  /* net_size holds the number of keyboards in the hardware system. */
 int net_size = 40;
 
@@ -173,7 +176,7 @@ int goofed[41];
  /* Here's a hash table to decode lower case keypresses. */
 int lc[255];
 
- /* These flag last keystroke or each keyboard as make (1) or break (0). */
+ /* These flag last keystroke on each keyboard as make (1) or break (0). */
 int make_or_break[41];
 
  /* This array records how many points a student receives for a right 
@@ -535,7 +538,8 @@ char ttext[201][21]=
      "SPEED IT UP...      ", // 192
      " LOOKS GOOD ...     ", // 193
      " BUMMER...          ", // 194
-     "                    "  // 195
+     " NO SUCH PAGE       ", // 195
+     " NO SUCH PROBLEM    ", // 196
       };
 
  /* This array holds ASCII representation of the number of each 
@@ -582,6 +586,9 @@ void boarda();
  /* This is the temporary routine for typing tutorial.  Polls student 
     keyboards. */
 void boardb();
+
+ /* This reports the number of pages in a math book. */
+void booklength();
 
  /* This does keyboard polling for Check Your Math. */
 void check();
@@ -1188,7 +1195,7 @@ boarda()
                    }
                       
                             /* CHECK FOR INPUT */
-                 a =  get_event(e);        
+                 a = get_event(e);        
                  if (a == 0) continue;
                    
                             /*  IF AT END OF LINE... */
@@ -1547,6 +1554,7 @@ check()
         {
           return;
         }
+       
       for (e = 0; e < net_size; e++)
         {   
           a = 0;
@@ -1556,88 +1564,97 @@ check()
           
           if ((step[e] == 0) && (a > 47) && (a < 58))
             {
-              /* Start over if answer is more than 3 digits long. */
+              page[e] = 10 * page[e] + (int) a - 48;  
+           
+              /* Start over if there is no such page. */
               jumpstart:
-              if (cursor[e] > 2)
+               
+              if ((page[e] > max_page) || ((int)a == 10))
                 {
                   cursor[e] = 0;
                   page[e] = 0;
-                   
+                  
                   SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
-
+            
                   if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[185], hue[e]);
                   else scratch = TTF_RenderText_Solid(fnt40, ttext[185], hue[e]);
                   SDL_BlitSurface(scratch, NULL, glass, &line[e]);
                   SDL_FreeSurface(scratch);
-
+                   
                   SDL_UpdateWindowSurface(windowframe);
                   continue;
                 }
-
-              page[e] = 10 * page[e] + (int) a - 48;  
-
+            
               if (cursor[e] == 0)
-                 {
-                   SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
-                   if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, &z[0], hue[e]);
-                   else scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
-                   SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
-                   SDL_FreeSurface(scratch);
-                 }
-
-               else
+                {
+                  SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
+                  if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, &z[0], hue[e]);
+                  else scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
+                  SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
+                  SDL_FreeSurface(scratch);
+                }
+                 
+              else
                 {
                   if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, &z[0], hue[e]);
                   else scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
                   SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                   SDL_FreeSurface(scratch);
                 } 
-
+                 
                SDL_UpdateWindowSurface(windowframe);
                cursor[e]++;  
              }                   
                                /* ASK FOR PROBLEM NUMBER */
-             
+               
            if ((step[e] == 0) && (a == 10))
              {
+               if (page[e] == 0) goto jumpstart;
                step[e]++;
                cursor[e] = 0;
                SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
-
+               
                if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[186], hue[e]);
                else scratch = TTF_RenderText_Solid(fnt40, ttext[186], hue[e]);
                SDL_BlitSurface(scratch, NULL, glass, &line[e]);
                SDL_FreeSurface(scratch);
-
+               
                SDL_UpdateWindowSurface(windowframe);
-
+                
                continue; 
              }
            
                        /* RECEIVE PROBLEM NUMBER */		
-
+               
            if ((step[e] == 1) && (a < 58) && (a > 47))
              {
                z[0] = (int) a;
-
+               
                if (cursor[e] == 0)
                  {
                    SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
                  }
-
+               
                if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, &z[0], hue[e]);
                else scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
                SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                SDL_FreeSurface(scratch);
                
                SDL_UpdateWindowSurface(windowframe);
-
+               
                problem[e] = 10 * problem[e] + (int) a - 48;  
+               if (cursor[e] == 2)
+                 {
+                   a = 10;
+                   step[e]--;
+                   cursor[e] = 4;
+                   goto jumpstart;
+                 }
                cursor[e]++;
              }
-
-                       /* ASK FOR STUDENT ANSWER */
-             
+                
+               /* IF NO PROBLEM REQUESTED, GO BACK AND ASK AGAIN FOR PAGE. */
+              
            if ((step[e] == 1) && (a == 10))
              {
                if (problem[e] == 0)
@@ -1646,9 +1663,11 @@ check()
                    cursor[e] = 4;
                    goto jumpstart;
                  }
-
+                  
                else
                 {
+                              /* ASK FOR STUDENT ANSWER */
+           
                   step[e]++;
                   SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
                 
@@ -1658,14 +1677,14 @@ check()
                   SDL_FreeSurface(scratch);
                   
                   SDL_UpdateWindowSurface(windowframe);
-                
+                  
                   cursor[e] = 0;
                   continue;
                 }
              }
                   
                          /* RECEIVE STUDENT ANSWER */
-           
+                         
            if (step[e] == 2) 
              {
                if ((a != 10) && (a !=13))
@@ -1679,41 +1698,42 @@ check()
                    else scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
                    SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                    SDL_FreeSurface(scratch);
-                 
+                       
                    SDL_UpdateWindowSurface(windowframe);
-                 
+                        
                    guess[e][cursor[e]] = z[0];  
-                       cursor[e]++;  
+                   if (cursor[e] < 20) cursor[e]++;  
                  }
-             }
-                                   /* ANSWER RIGHT OR WRONG? */
                  
-           if ((a == 10) && (step[e] == 2))
-             {
-                 find_answer();
-                 SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
-
-                 if (strcmp(answ[e],guess[e]) == 0)
-                   {
-                     if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[193], hue[e]);
-                     else scratch = TTF_RenderText_Solid(fnt40, ttext[193], hue[e]);
-                     SDL_BlitSurface(scratch, NULL, glass, &line[e]);
-                     SDL_FreeSurface(scratch);
-                     cursor[e] = 0;
-                     step[e] = 0;
-                   }
-
-                 else
-                   {
-                     if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[194], hue[e]);
-                     else scratch = TTF_RenderText_Solid(fnt40, ttext[194], hue[e]);
-                     SDL_BlitSurface(scratch, NULL, glass, &line[e]);
-                     SDL_FreeSurface(scratch);
-                     step[e] = 0;
-                   }
-                     problem[e] = 0;
-                     SDL_UpdateWindowSurface(windowframe);
-                     for (d = 0; d < 20; d ++)  guess[e][d] = 0;
+                                   /* ANSWER RIGHT OR WRONG? */
+                    
+               if ((a == 10) || cursor[e] == 20)
+                 {
+                   find_answer();
+                   SDL_FillRect(glass, &line[e], SDL_MapRGB(glass->format,255,255,255));
+                     
+                   if (strcmp(answ[e],guess[e]) == 0)
+                     {
+                       if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[193], hue[e]);
+                       else scratch = TTF_RenderText_Solid(fnt40, ttext[193], hue[e]);
+                       SDL_BlitSurface(scratch, NULL, glass, &line[e]);
+                       SDL_FreeSurface(scratch);
+                       cursor[e] = 0;
+                       step[e] = 0;
+                     }
+                     
+                   else
+                     {
+                       if(net_size==40) scratch = TTF_RenderText_Solid(fnt30, ttext[194], hue[e]);
+                       else scratch = TTF_RenderText_Solid(fnt40, ttext[194], hue[e]);
+                       SDL_BlitSurface(scratch, NULL, glass, &line[e]);
+                       SDL_FreeSurface(scratch);
+                       step[e] = 0;
+                     }
+                       problem[e] = 0;
+                       SDL_UpdateWindowSurface(windowframe);
+                       for (d = 0; d < 20; d++)  guess[e][d] = 0;
+                } 
              }
          }
      }
@@ -3313,7 +3333,8 @@ get_event(int e)
                upper_case[e] = 0;
              }
          } 
-       if(value == 0 || value == 2)
+//       if(value == 0 || value == 2)
+       if(value == 0)
          {
            ltr = 0; 
            make_or_break[0] = 0; 
@@ -5858,7 +5879,7 @@ process()
                 continue;
               }
               
-             /* PRINT INPUT CHARACTER FROM CURSOR 0 TO CURSOR 18, OR... */
+             /* PRINT INPUT TO A CURSOR POSITION BETWEEN 0 AND 18, OR... */
              if ((a != 130) && (cursor[e] < 19))
                {
                     /* First, erase any character in destination space.  */
@@ -5905,13 +5926,13 @@ process()
                  comp[e][text_pos[e] + cursor[e]] = z[0];
                   
                    /* Third, select adjacent (right-hand) text segment.  */
-                 text_pos[e]++;
+                 if (text_pos[e] < 4970) text_pos[e]++;
                  for (b = 0; b < 20; b++) 
                    {
                      display_line[e][b] = comp[e][text_pos[e] + b];
                    }
                      
-                    /* Fourth, print new the new text segment.  */                   
+                    /* Fourth, print the new text segment.  */                   
                  scratch = TTF_RenderText_Solid(fnt30, display_line[e], hue[e]);
                  SDL_BlitSurface(scratch, NULL, glass, &line[e]);
                  SDL_FreeSurface(scratch);
@@ -6080,7 +6101,7 @@ process()
                  continue;
                }
              
-             /* PRINT INPUT CHARACTER FROM CURSOR 0 TO CURSOR 18, OR... */
+             /* PRINT INPUT IF CURSOR IS BETWEEN 0 AND 18, OR... */
              if ((a != 130) && (cursor[e] < 19))
                {
                  /* First, erase any character in destination space.  */
@@ -6088,28 +6109,28 @@ process()
                  scratch = TTF_RenderText_Solid(fnt40, &z[0], white);
                  SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                  SDL_FreeSurface(scratch);
-             
+                 
                  /* Second, erase cursor in desination space.  */             
                  scratch = TTF_RenderText_Solid(fnt40, "_", white);
                  SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                  SDL_FreeSurface(scratch);
-              
+                 
                  /* Third, put the new character in text file.  */
                  z[0] = a;
                  display_line[e][cursor[e]] = z[0];
                  comp[e][text_pos[e] + cursor[e]] = z[0];
-              
+                 
                  /* Fourth, put the new character on the screen.  */
                  scratch = TTF_RenderText_Solid(fnt40, &z[0], hue[e]);
                  SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                  SDL_FreeSurface(scratch);
-                
+                 
                  /* Finally, increment and reprint the cursor.  */
                  cursor[e]++;
                  scratch = TTF_RenderText_Solid(fnt40, "_", hue[e]);
                  SDL_BlitSurface(scratch, NULL, glass, &tile[e][cursor[e]]);
                  SDL_FreeSurface(scratch);
-              
+                 
                  continue;
                }
                
@@ -6120,14 +6141,14 @@ process()
                  scratch = TTF_RenderText_Solid(fnt40, display_line[e], white);
                  SDL_BlitSurface(scratch, NULL, glass, &line[e]);
                  SDL_FreeSurface(scratch);
-              
+                 
                  /* Second, add new character to text file.  */
                  z[0] = a;
                  display_line[e][cursor[e]] = z[0];
                  comp[e][text_pos[e] + cursor[e]] = z[0];
                    
                  /* Third, select adjacent (right hand) text segment.  */
-                 text_pos[e]++;
+                 if (text_pos[e] < 4970) text_pos[e]++;
                  for (b = 0; b < 20; b++) 
                    {
                      display_line[e][b] = comp[e][text_pos[e] + b];
@@ -6549,6 +6570,7 @@ select_book()
              FP = fopen("/usr/local/etc/answerkeys/text1", "r");
              fgets(key, 40000, FP);
              fclose(FP);
+             booklength();
              return 0;
              break;
                   
@@ -6556,6 +6578,7 @@ select_book()
              FP = fopen("/usr/local/etc/answerkeys/text2", "r");
              fgets(key, 40000, FP);
              fclose(FP);
+             booklength();
              return 0;
              break;
                   
@@ -6563,6 +6586,7 @@ select_book()
              FP = fopen("/usr/local/etc/answerkeys/text3", "r");
              fgets(key, 40000, FP);
              fclose(FP);
+             booklength();
              return 0;
              break;
                   
@@ -6570,12 +6594,25 @@ select_book()
              FP = fopen("/usr/local/etc/answerkeys/text4", "r");
              fgets(key, 40000, FP);
              fclose(FP);
+             booklength();
              return 0;
              break;
            }
         }
-    }
+    }                        
   return 0;
+}
+
+void
+booklength()
+{ 
+  max_page = 0;
+  for (a = 0;  key[a] != 64;  a++)
+//  for (a = 0;  a < 40000;  a++)
+    {
+      if (key[a] == 126) max_page++;
+    }  
+  return;
 }
 
 int
@@ -6938,7 +6975,7 @@ win_page()
    
   unsigned long az = 0;
    
-  for (az = 0; az < 300; az++)
+  for (az = 0; az < 3000000; az++)
     {
       SDL_Event event;
       event.type = SDL_KEYUP;    
